@@ -26,9 +26,9 @@ public class AppointmentPage {
 	By buttonBookAppoinment = By.xpath("//button[@id='btn-book-appointment']");
 	
 	public void inputDropdown(String facilityName) {
+//		driver.findElement(dropdownOptionHongkong).click();
 		Select facilityDropdown = new Select(driver.findElement(dropdownFacility));
 		facilityDropdown.selectByVisibleText(facilityName);
-//		driver.findElement(dropdownOptionHongkong).click();
 	}
 	public void clickCheckboxReadmission(boolean readmission) {
 		WebElement checkbox = driver.findElement(checkboxReadmission);

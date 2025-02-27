@@ -6,6 +6,8 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.WebDriverWait;
 import org.testng.Assert;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.AfterMethod;
@@ -26,6 +28,7 @@ public class BaseTest {
 	LoginPage loginPage;
 	AppointmentPage appointmentPage;
 	SummaryPage summaryPage;
+	WebDriverWait wait;
 	
 	@BeforeMethod
 	public void setup() {
@@ -38,6 +41,7 @@ public class BaseTest {
 		loginPage = new LoginPage(driver);
 		appointmentPage = new AppointmentPage(driver);
 		summaryPage = new SummaryPage(driver);
+		wait = new WebDriverWait(driver,Duration.ofSeconds(10));
 	}
 	
 	@DataProvider(name = "appointmentData")
@@ -47,12 +51,24 @@ public class BaseTest {
 		};
 	}
 	
+	@DataProvider(name="invalidLoginData")
+	public Object[][] getInvalidLoginData(){
+		return new Object[][] {
+			{"invalid username","invalidPassword"}
+		};
+	}
 	
-	@Test(description = "TC_1.1 - Login with invalid data")
-	public void loginWithUnvalidDataTest() throws InterruptedException {
+	@DataProvider(name="validLoginData")
+	public Object[][] getValidLoginData(){
+		return new Object[][] {
+			{"John Doe","ThisIsNotAPassword"}
+		};
+	}
+	@Test(description = "TC_1.1 - Login with invalid data", dataProvider = "invalidLoginData")
+	public void loginWithUnvalidDataTest(String username, String password) throws InterruptedException {
 		homePage.clickAppointment();
-		loginPage.inputUsername("Invalid Username");
-		loginPage.inputPassword("InvalidPassword");
+		loginPage.inputUsername(username);
+		loginPage.inputPassword(password);
 		loginPage.clickLoginButton();
 		Thread.sleep(3000);
 		WebElement textInvalid = driver.findElement(By.xpath("//p[@class='lead text-danger']"));
@@ -64,13 +80,14 @@ public class BaseTest {
 		
 	}
 	
-	@Test(description = "TC_1.2 - Login with valid data")
-	public void loginWithValidDataTest() throws InterruptedException {
+	@Test(description = "TC_1.2 - Login with valid data", dataProvider = "validLoginData")
+	public void loginWithValidDataTest(String username, String password) throws InterruptedException {
 		homePage.clickAppointment();
-		loginPage.inputUsername("John Doe");
-		loginPage.inputPassword("ThisIsNotAPassword");
+		loginPage.inputUsername(username);
+		loginPage.inputPassword(password);
 		loginPage.clickLoginButton();
-		Thread.sleep(3000);
+//		Thread.sleep(3000);
+		wait.until(ExpectedConditions.urlContains("appointment"));
 		String currentUrl = driver.getCurrentUrl();
 		if(currentUrl.contains("appointment")) {
 			System.out.println("Login berhasil!");
@@ -81,19 +98,19 @@ public class BaseTest {
 	
 	@Test(description = "TC_2.1 - Make Appointment without input mandatory field",dataProvider ="appointmentData")
 	public void makeAppointmentWithoutInputMandatory(String facility, boolean readmission, String program, String comment) throws InterruptedException {
-		loginWithValidDataTest();
+		loginWithValidDataTest("John Doe","ThisIsNotAPassword");
 		appointmentPage.inputDropdown(facility);
 		appointmentPage.clickCheckboxReadmission(readmission);
 		appointmentPage.inputRadioButtonHealthCare(program);
 		appointmentPage.inputComment(comment);
 		appointmentPage.submitBookAppointment();
-		Thread.sleep(3000);
+		Thread.sleep(1000);
 		appointmentPage.getMessageErrorRequired();
 	}
 	
 	@Test(description = "TC_2.2 - Make Appointment Success", dataProvider = "appointmentData")
 	public void makeAppointmentSuccess(String facility, boolean readmission, String program, String comment) throws InterruptedException {
-		loginWithValidDataTest();
+		loginWithValidDataTest("John Doe","ThisIsNotAPassword");
 		appointmentPage.inputDropdown(facility);
 		appointmentPage.clickCheckboxReadmission(readmission);
 		appointmentPage.inputRadioButtonHealthCare(program);
@@ -101,7 +118,8 @@ public class BaseTest {
 		String inputtedDate = appointmentPage.inputDatePicker();
 		appointmentPage.inputComment(comment);
 		appointmentPage.submitBookAppointment();
-		Thread.sleep(3000);
+//		Thread.sleep(3000);
+		wait.until(ExpectedConditions.urlContains("summary"));
 		String currentUrl = driver.getCurrentUrl();
 		if(currentUrl.contains("summary")) {
 			System.out.println("Test Passed: Make Appointment Success");
